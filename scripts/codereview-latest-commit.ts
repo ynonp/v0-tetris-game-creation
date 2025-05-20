@@ -1,11 +1,11 @@
 import { openai } from '@ai-sdk/openai';
-import { generateText } from 'ai';
+import { generateText, streamText } from 'ai';
 import { execSync } from 'child_process';
 
 async function main() {
   const commitMessage = execSync('git log -1 --pretty=%B').toString().trim();
   const changes = execSync('git show -p HEAD').toString().trim();
-  const { text } = await generateText({
+  const { textStream } = streamText({
     model: openai('gpt-4-turbo'),
     prompt: `
     You are a code reviewer.
@@ -15,7 +15,10 @@ async function main() {
     The changes are: ${changes}
     `,
   });
-  console.log(text);
+  
+  for await (const textPart of textStream) {
+    process.stdout.write(textPart);
+  }
 }
 
 main();
